@@ -1,11 +1,11 @@
 package com.example.honorcup
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.os.Bundle
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.honorcup.models.BigCeil
 import kotlinx.android.synthetic.main.activity_main.*
@@ -20,12 +20,12 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         Thread {
-            for (i in 1200 until 1800) {
+            for (i in 9 until 10) {
 
-                println("i : $i.png")
+                println("i : ${formatPngName(i, true)}")
 
                 val id = resources
-                    .getIdentifier("photo$i", "drawable", packageName)
+                    .getIdentifier("photo16_${formatPngName(i, false)}", "drawable", packageName)
 
                 val bitmap = BitmapFactory.decodeResource(resources, id)
 
@@ -40,7 +40,7 @@ class MainActivity : AppCompatActivity() {
 
                 println("R: $redValue B: $blueValue G: $greenValue")
 
-                val bigCeil = BigCeil(64, bitmap)
+                val bigCeil = BigCeil(16, bitmap)
 
                 bigCeil.findBestPermutation()
                 val resultCeil = bigCeil.getResultCeil()
@@ -49,7 +49,7 @@ class MainActivity : AppCompatActivity() {
 
                 showImage(resultCeil)
 
-                val ans = formatPngName(i) + '\n'
+                val ans = formatPngName(i, true) + '\n'
                 var ans1 = ""
 
                 for (i1 in 0 until bigCeil.result.size) {
@@ -59,23 +59,68 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 ans1 += '\n'
-                save(ans + ans1)
+                save(ans + ans1, resultCeil, i)
             }
         }.start()
+
+        /*Thread {
+            for (i in 615 until 630) {
+
+                println("i : ${formatPngName(i, true)}")
+
+                val id = resources
+                    .getIdentifier("photo32_${formatPngName(i, false)}", "drawable", packageName)
+
+                val bitmap = BitmapFactory.decodeResource(resources, id)
+
+                println("widhts: ${bitmap.width} ${bitmap.height}")
+                //512 512
+
+                val argbBitmap = bitmap.getPixel(0, 1)
+
+                val redValue = Color.red(argbBitmap)
+                val blueValue = Color.blue(argbBitmap)
+                val greenValue = Color.green(argbBitmap)
+
+                println("R: $redValue B: $blueValue G: $greenValue")
+
+                val bigCeil = BigCeil(32, bitmap)
+
+                bigCeil.findBestPermutation()
+                val resultCeil = bigCeil.getResultCeil()
+
+                println("Result ceil : $resultCeil")
+
+                showImage(resultCeil)
+
+                val ans = formatPngName(i, true) + '\n'
+                var ans1 = ""
+
+                for (i1 in 0 until bigCeil.result.size) {
+                    for (j1 in 0 until bigCeil.result[i1].size) {
+                        ans1 += bigCeil.result[i1][j1].ind.toString() + " "
+                    }
+                }
+
+                ans1 += '\n'
+                save(ans + ans1, resultCeil, i)
+            }
+        }.start()
+*/
     }
 
-    private fun save(text: String) {
+    @SuppressLint("SetTextI18n")
+    private fun save(text: String, bitmap: Bitmap, ind: Int) {
         var fos: FileOutputStream? = null
-
+        var fbos: FileOutputStream? = null
         try {
             fos = openFileOutput(FILE_NAME, Context.MODE_APPEND)
             fos?.write(text.toByteArray())
+            fbos = openFileOutput("photo$ind", Context.MODE_PRIVATE)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fbos)
 
             runOnUiThread {
-                Toast.makeText(
-                    this, "Saved to $filesDir/$FILE_NAME",
-                    Toast.LENGTH_LONG
-                ).show()
+                tvTitle.text = "Uploaded : $ind"
             }
         } catch (e: FileNotFoundException) {
             e.printStackTrace()
@@ -90,11 +135,25 @@ class MainActivity : AppCompatActivity() {
                 }
 
             }
+            if (fbos != null) {
+                try {
+                    fbos.close()
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                }
+
+            }
         }
     }
 
-    private fun formatPngName(num: Int): String {
-        return "$num.png"
+    private fun formatPngName(num: Int, withPng: Boolean): String {
+        val res = when {
+            num < 10 -> "000$num"
+            num < 100 -> "00$num"
+            num < 1000 -> "0$num"
+            else -> "$num"
+        }
+        return if (withPng) "$res.png" else res
     }
 
     private fun showImage(bitmap: Bitmap) {
@@ -102,7 +161,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
-        const val FILE_NAME = "answers_for_64_train.txt"
+        const val FILE_NAME = "answers_for_16_train.txt"
     }
 
 }

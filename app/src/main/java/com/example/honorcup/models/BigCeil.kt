@@ -5,6 +5,7 @@ import android.graphics.Color
 import com.example.honorcup.CIELab
 import com.example.honorcup.CombinerImages
 import java.util.*
+import kotlin.math.min
 import kotlin.math.sqrt
 
 data class Side(var left: Double?, var right: Double?, var top: Double?, var bottom: Double?)
@@ -63,20 +64,22 @@ class BigCeil(private val ceilSz: Int, bitmap: Bitmap) {
     fun findBestPermutation() {
         var res: Double = Double.MAX_VALUE
         precalcDistances()
+
         for (i in 0 until sz) {
             for (j in 0 until sz) {
 
                 val cur = findResult(arr[i][j])
 
-                //println("Res for : $i $j : $res")
+                println("Res for : $i $j : ${cur.first}")
                 if (cur.first < res) {
                     res = cur.first
                     result = cur.second
                 }
+                //println("Res $res")
             }
         }
 
-        //println("Res $res")
+        println("Res $res")
     }
 
     private fun precalcDistances() {
@@ -108,7 +111,16 @@ class BigCeil(private val ceilSz: Int, bitmap: Bitmap) {
         }
     }
 
-    data class Node(val i: Int, val j: Int)
+    data class Node(val sum: Double, val i: Int, val j: Int) :
+        Comparable<Node> {
+        override operator fun compareTo(other: Node): Int {
+            return when {
+                this.sum < other.sum -> -1
+                this.sum < other.sum -> 1
+                else -> 0
+            }
+        }
+    }
 
     private fun findResult(stCeil: Ceil): Pair<Double, MutableList<MutableList<Ceil>>> {
         val tempRes: MutableList<MutableList<Ceil>> = mutableListOf()
@@ -130,9 +142,9 @@ class BigCeil(private val ceilSz: Int, bitmap: Bitmap) {
 
         //println("ST : $stI $stJ")
 
-        val queue: Queue<Node> = ArrayDeque<Node>()
+        val queue: PriorityQueue<Node> = PriorityQueue()
 
-        queue.add(Node(stI, stJ))
+        queue.add(Node(0.toDouble(), stI, stJ))
         set.remove(stCeil)
         used[stI][stJ] = true
         tempRes[stI][stJ] = stCeil
@@ -154,10 +166,11 @@ class BigCeil(private val ceilSz: Int, bitmap: Bitmap) {
         while (queue.isNotEmpty()) {
             val i = queue.element().i
             val j = queue.element().j
+            //println("${queue.element().sum}")
+
             queue.remove()
 
             //println("SzSet: ${set.size} Set: ${set.map { it.ind }}")
-
             //println("Point : $i $j")
             for (cf1 in -1 until 2) {
                 for (cf2 in -1 until 2) {
@@ -172,25 +185,33 @@ class BigCeil(private val ceilSz: Int, bitmap: Bitmap) {
 
                             var sum = Double.MAX_VALUE
                             var bestCeil: Ceil? = null
+                            var mnSum = Double.MAX_VALUE
                             for (el in set) {
+                                var curMin = Double.MAX_VALUE
                                 var cursum: Double = 0.toDouble()
                                 if (left != -1) {
+                                    curMin = min(curMin, dist[el.ind][left].left!!)
                                     cursum += dist[el.ind][left].left!!
                                 }
                                 if (right != -1) {
                                     cursum += dist[el.ind][right].right!!
+                                    curMin = min(curMin, dist[el.ind][right].right!!)
+
                                     //connectHorizontally(el.bitmap!!, right)
                                 }
                                 if (bottom != -1) {
+                                    curMin = min(curMin, dist[el.ind][bottom].bottom!!)
                                     cursum += dist[el.ind][bottom].bottom!!
                                     //connectVertically(el.bitmap!!, bottom)
                                 }
                                 if (top != -1) {
+                                    curMin = min(curMin, dist[el.ind][top].top!!)
                                     cursum += dist[el.ind][top].top!!
                                     //cursum += connectVertically(top, el.bitmap!!)
                                 }
                                 if (cursum < sum) {
                                     sum = cursum
+                                    mnSum = curMin
                                     bestCeil = el
                                 }
                             }
@@ -198,7 +219,7 @@ class BigCeil(private val ceilSz: Int, bitmap: Bitmap) {
                             tempRes[ni][nj] = bestCeil!!
                             used[ni][nj] = true
                             set.remove(bestCeil)
-                            queue.add(Node(ni, nj))
+                            queue.add(Node(mnSum, ni, nj))
                         }
                     }
                 }
@@ -217,10 +238,16 @@ class BigCeil(private val ceilSz: Int, bitmap: Bitmap) {
         for (i in 0 until sz) {
             for (j in 0 until sz) {
                 if (i - 1 >= 0) {
-                    res += connectVertically(tempRes[i - 1][j].bitmap!!, tempRes[i][j].bitmap!!)
+                    res += connectVertically(
+                        tempRes[i - 1][j].bitmap!!,
+                        tempRes[i][j].bitmap!!
+                    )
                 }
                 if (j - 1 >= 0) {
-                    res += connectHorizontally(tempRes[i][j - 1].bitmap!!, tempRes[i][j].bitmap!!)
+                    res += connectHorizontally(
+                        tempRes[i][j - 1].bitmap!!,
+                        tempRes[i][j].bitmap!!
+                    )
                 }
             }
         }
