@@ -20,12 +20,12 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         Thread {
-            for (i in 9 until 10) {
+            for (i in 3300 until 3304) {
 
                 println("i : ${formatPngName(i, true)}")
 
                 val id = resources
-                    .getIdentifier("photo16_${formatPngName(i, false)}", "drawable", packageName)
+                    .getIdentifier("photo64_${formatPngName(i, false)}", "drawable", packageName)
 
                 val bitmap = BitmapFactory.decodeResource(resources, id)
 
@@ -40,7 +40,7 @@ class MainActivity : AppCompatActivity() {
 
                 println("R: $redValue B: $blueValue G: $greenValue")
 
-                val bigCeil = BigCeil(16, bitmap)
+                val bigCeil = BigCeil(64, bitmap)
 
                 bigCeil.findBestPermutation()
                 val resultCeil = bigCeil.getResultCeil()
@@ -64,7 +64,7 @@ class MainActivity : AppCompatActivity() {
         }.start()
 
         /*Thread {
-            for (i in 615 until 630) {
+            for (i in 3150 until 3300) {
 
                 println("i : ${formatPngName(i, true)}")
 
@@ -106,7 +106,8 @@ class MainActivity : AppCompatActivity() {
                 save(ans + ans1, resultCeil, i)
             }
         }.start()
-*/
+         */
+
     }
 
     @SuppressLint("SetTextI18n")
@@ -116,7 +117,7 @@ class MainActivity : AppCompatActivity() {
         try {
             fos = openFileOutput(FILE_NAME, Context.MODE_APPEND)
             fos?.write(text.toByteArray())
-            fbos = openFileOutput("photo$ind", Context.MODE_PRIVATE)
+            fbos = openFileOutput("photo64_$ind", Context.MODE_PRIVATE)
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, fbos)
 
             runOnUiThread {
@@ -161,7 +162,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
-        const val FILE_NAME = "answers_for_16_train.txt"
+        const val FILE_NAME = "answers_for_64_ans.txt"
     }
 
 }
