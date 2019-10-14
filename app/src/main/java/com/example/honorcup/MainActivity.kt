@@ -19,53 +19,103 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val good = listOf(
+            3002,
+            3005,
+            3016,
+            3018,
+            3029,
+            3030,
+            3035,
+            3036,
+            3037,
+            3042,
+            3045,
+            3054,
+            3055,
+            3056,
+            3057,
+            3064,
+            3070,
+            3073,
+            3075,
+            3076,
+            3077,
+            3084,
+            3089,
+            3090,
+            3091,
+            3094,
+            3098,
+            3099,
+            3104,
+            3106,
+            3109,
+            3111,
+            3112,
+            3115,
+            3117,
+            3125,
+            3127,
+            3141,
+            3143,
+            3148,
+            3151,
+            3161,
+            3167,
+            3168,
+            3173,
+            3174,
+            3178,
+            3179,
+            3180,
+            3187,
+            3188,
+            3189,
+            3190,
+            3194,
+            3195,
+            3198,
+            3199,
+            3200,
+            3205,
+            3207,
+            3209,
+            3210,
+            3217,
+            3218,
+            3219,
+            3222,
+            3227,
+            3229,
+            3231,
+            3234,
+            3238,
+            3239,
+            3241,
+            3244,
+            3245,
+            3246,
+            3250,
+            3251,
+            3253,
+            3257,
+            3276,
+            3277,
+            3288,
+            3295,
+            3299
+        )
+
+        var all = (3000..3299).toList()
+
+        all = all.minus(good)
+        println("Size : ${all.size}")
+        println(all)
+
         Thread {
-            for (i in 3300 until 3304) {
-
-                println("i : ${formatPngName(i, true)}")
-
-                val id = resources
-                    .getIdentifier("photo64_${formatPngName(i, false)}", "drawable", packageName)
-
-                val bitmap = BitmapFactory.decodeResource(resources, id)
-
-                println("widhts: ${bitmap.width} ${bitmap.height}")
-                //512 512
-
-                val argbBitmap = bitmap.getPixel(0, 1)
-
-                val redValue = Color.red(argbBitmap)
-                val blueValue = Color.blue(argbBitmap)
-                val greenValue = Color.green(argbBitmap)
-
-                println("R: $redValue B: $blueValue G: $greenValue")
-
-                val bigCeil = BigCeil(64, bitmap)
-
-                bigCeil.findBestPermutation()
-                val resultCeil = bigCeil.getResultCeil()
-
-                println("Result ceil : $resultCeil")
-
-                showImage(resultCeil)
-
-                val ans = formatPngName(i, true) + '\n'
-                var ans1 = ""
-
-                for (i1 in 0 until bigCeil.result.size) {
-                    for (j1 in 0 until bigCeil.result[i1].size) {
-                        ans1 += bigCeil.result[i1][j1].ind.toString() + " "
-                    }
-                }
-
-                ans1 += '\n'
-                save(ans + ans1, resultCeil, i)
-            }
-        }.start()
-
-        /*Thread {
-            for (i in 3150 until 3300) {
-
+            for (sc in 0 until 5) {
+                val i = all[sc]
                 println("i : ${formatPngName(i, true)}")
 
                 val id = resources
@@ -84,29 +134,37 @@ class MainActivity : AppCompatActivity() {
 
                 println("R: $redValue B: $blueValue G: $greenValue")
 
+
+                var ans = Double.MAX_VALUE
+                var prans = ""
+                var ansResultCeil: Bitmap? = null
                 val bigCeil = BigCeil(32, bitmap)
+                bigCeil.precalcDistances()
+                for (cnt in 0 until 3) {
+                    bigCeil.findBestPermutation()
+                    val resultCeil = bigCeil.getResultCeil()
 
-                bigCeil.findBestPermutation()
-                val resultCeil = bigCeil.getResultCeil()
+                    val curans = formatPngName(i, true) + '\n'
+                    var curans1 = ""
 
-                println("Result ceil : $resultCeil")
+                    for (i1 in 0 until bigCeil.result.size) {
+                        for (j1 in 0 until bigCeil.result[i1].size) {
+                            curans1 += bigCeil.result[i1][j1].ind.toString() + " "
+                        }
+                    }
 
-                showImage(resultCeil)
+                    curans1 += '\n'
+                    if (bigCeil.res < ans) {
+                        ans = bigCeil.res
+                        prans = curans + curans1
+                        ansResultCeil = resultCeil
 
-                val ans = formatPngName(i, true) + '\n'
-                var ans1 = ""
-
-                for (i1 in 0 until bigCeil.result.size) {
-                    for (j1 in 0 until bigCeil.result[i1].size) {
-                        ans1 += bigCeil.result[i1][j1].ind.toString() + " "
                     }
                 }
-
-                ans1 += '\n'
-                save(ans + ans1, resultCeil, i)
+                showImage(ansResultCeil!!)
+                save(prans, ansResultCeil, i)
             }
         }.start()
-         */
 
     }
 
@@ -117,7 +175,7 @@ class MainActivity : AppCompatActivity() {
         try {
             fos = openFileOutput(FILE_NAME, Context.MODE_APPEND)
             fos?.write(text.toByteArray())
-            fbos = openFileOutput("photo64_$ind", Context.MODE_PRIVATE)
+            fbos = openFileOutput("photo32_$ind", Context.MODE_PRIVATE)
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, fbos)
 
             runOnUiThread {
@@ -162,7 +220,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
-        const val FILE_NAME = "answers_for_64_ans.txt"
+        const val FILE_NAME = "answers_for_32_ans.txt"
     }
 
 }

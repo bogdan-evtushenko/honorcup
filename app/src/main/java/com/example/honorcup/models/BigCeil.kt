@@ -5,8 +5,6 @@ import android.graphics.Color
 import com.example.honorcup.CIELab
 import com.example.honorcup.CombinerImages
 import java.util.*
-import kotlin.math.min
-import kotlin.math.sqrt
 
 data class Side(var left: Double?, var right: Double?, var top: Double?, var bottom: Double?)
 
@@ -17,6 +15,7 @@ class BigCeil(private val ceilSz: Int, bitmap: Bitmap) {
     var result: MutableList<MutableList<Ceil>> = mutableListOf()
     private var dist: MutableList<MutableList<Side>> = mutableListOf()
     private val sz = N / ceilSz
+    var res: Double = Double.MAX_VALUE
 
     init {
         for (i in 0 until sz) {
@@ -61,15 +60,13 @@ class BigCeil(private val ceilSz: Int, bitmap: Bitmap) {
     }
 
     fun findBestPermutation() {
-        var res: Double = Double.MAX_VALUE
-        precalcDistances()
 
         for (i in 0 until sz) {
             for (j in 0 until sz) {
 
                 val cur = findResult(arr[i][j])
 
-                println("Res for : $i $j : ${cur.first}")
+                //println("Res for : $i $j : ${cur.first}")
                 if (cur.first < res) {
                     res = cur.first
                     result = cur.second
@@ -81,7 +78,7 @@ class BigCeil(private val ceilSz: Int, bitmap: Bitmap) {
         println("Res $res")
     }
 
-    private fun precalcDistances() {
+    fun precalcDistances() {
 
         for (i in 0 until sz * sz) {
             dist.add(mutableListOf())
@@ -127,10 +124,10 @@ class BigCeil(private val ceilSz: Int, bitmap: Bitmap) {
             }
         }
 
-        val stI = sz / 2
-        val stJ = sz / 2
+        val stI = (0 until sz).random()
+        val stJ = (0 until sz).random()
 
-        //println("ST : $stI $stJ")
+        println("ST : $stI $stJ")
 
         val queue: Queue<Node> = LinkedList()
 
@@ -263,12 +260,88 @@ class BigCeil(private val ceilSz: Int, bitmap: Bitmap) {
         val cur1: DoubleArray = CIELab().rgbToLab(r1, g1, b1)
         val cur2: DoubleArray = CIELab().rgbToLab(r2, g2, b2)
 
-        return sqrt(
-            (cur2[0] - cur1[0]) * (cur2[0] - cur1[0]) +
-                    (cur2[1] - cur1[1]) * (cur2[1] - cur1[1]) +
-                    (cur2[2] - cur1[2]) * (cur2[2] - cur1[2])
-        )
+        return calculateDeltaE(cur1[0], cur1[1], cur1[2], cur2[0], cur2[1], cur2[2])
     }
+
+    private fun calculateDeltaE(
+        L1: Double,
+        a1: Double,
+        b1: Double,
+        L2: Double,
+        a2: Double,
+        b2: Double
+    ): Double {
+
+        val Lmean = (L1 + L2) / 2.0 //ok
+        val C1 = Math.sqrt(a1 * a1 + b1 * b1) //ok
+        val C2 = Math.sqrt(a2 * a2 + b2 * b2) //ok
+        val Cmean = (C1 + C2) / 2.0 //ok
+
+        val G = (1 - Math.sqrt(
+            Math.pow(Cmean, 7.0) / (Math.pow(Cmean, 7.0) + Math.pow(
+                25.0,
+                7.0
+            ))
+        )) / 2 //ok
+        val a1prime = a1 * (1 + G) //ok
+        val a2prime = a2 * (1 + G) //ok
+
+        val C1prime = Math.sqrt(a1prime * a1prime + b1 * b1) //ok
+        val C2prime = Math.sqrt(a2prime * a2prime + b2 * b2) //ok
+        val Cmeanprime = (C1prime + C2prime) / 2 //ok
+
+        val h1prime = Math.atan2(b1.toDouble(), a1prime) + 2.0 * Math.PI * (if (Math.atan2(
+                b1.toDouble(),
+                a1prime
+            ) < 0
+        ) 1 else 0).toDouble()
+        val h2prime = Math.atan2(b2.toDouble(), a2prime) + 2.0 * Math.PI * (if (Math.atan2(
+                b2.toDouble(),
+                a2prime
+            ) < 0
+        ) 1 else 0).toDouble()
+        val Hmeanprime =
+            if (Math.abs(h1prime - h2prime) > Math.PI) (h1prime + h2prime + 2 * Math.PI) / 2 else (h1prime + h2prime) / 2 //ok
+
+        val T =
+            1.0 - 0.17 * Math.cos(Hmeanprime - Math.PI / 6.0) + 0.24 * Math.cos(2 * Hmeanprime) + 0.32 * Math.cos(
+                3 * Hmeanprime + Math.PI / 30
+            ) - 0.2 * Math.cos(4 * Hmeanprime - 21 * Math.PI / 60) //ok
+
+        val deltahprime =
+            if (Math.abs(h1prime - h2prime) <= Math.PI) h2prime - h1prime else if (h2prime <= h1prime) h2prime - h1prime + 2 * Math.PI else h2prime - h1prime - 2 * Math.PI //ok
+
+        val deltaLprime = (L2 - L1).toDouble() //ok
+        val deltaCprime = C2prime - C1prime //ok
+        val deltaHprime = 2.0 * Math.sqrt(C1prime * C2prime) * Math.sin(deltahprime / 2.0) //ok
+        val SL =
+            1.0 + 0.015 * (Lmean - 50) * (Lmean - 50) / Math.sqrt(20 + (Lmean - 50) * (Lmean - 50)) //ok
+        val SC = 1.0 + 0.045 * Cmeanprime //ok
+        val SH = 1.0 + 0.015 * Cmeanprime * T //ok
+
+        val deltaTheta =
+            30 * Math.PI / 180 * Math.exp(-((180 / Math.PI * Hmeanprime - 275) / 25) * ((180 / Math.PI * Hmeanprime - 275) / 25))
+        val RC = 2 * Math.sqrt(
+            Math.pow(Cmeanprime, 7.0) / (Math.pow(Cmeanprime, 7.0) + Math.pow(
+                25.0,
+                7.0
+            ))
+        )
+        val RT = -RC * Math.sin(2 * deltaTheta)
+
+        val KL = 1.0
+        val KC = 1.0
+        val KH = 1.0
+
+        val deltaE = Math.sqrt(
+            deltaLprime / (KL * SL) * (deltaLprime / (KL * SL)) +
+                    deltaCprime / (KC * SC) * (deltaCprime / (KC * SC)) +
+                    deltaHprime / (KH * SH) * (deltaHprime / (KH * SH)) +
+                    RT * (deltaCprime / (KC * SC)) * (deltaHprime / (KH * SH))
+        )
+        return deltaE
+    }
+
 
     companion object {
         const val N = 512
